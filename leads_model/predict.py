@@ -23,9 +23,11 @@ import modelo_a
 import modelo_b
 
 
-DATA_PATH = "data/base_de_dados.xlsx"
-MODEL_A_PATH = "models/modelo_a.pkl"
-MODEL_B_PATH = "models/modelo_b.pkl"
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, "data", "base_de_dados.xlsx")
+MODEL_A_PATH = os.path.join(BASE_DIR, "models", "modelo_a.pkl")
+MODEL_B_PATH = os.path.join(BASE_DIR, "models", "modelo_b.pkl")
 
 
 def load_models():
