@@ -57,6 +57,15 @@ def load_data():
 st.title("🏗️ Simulador de Leads — Prestes")
 st.caption("Modelo preditivo de geração e qualificação de leads · Jan/2024 → Fev/2026")
 
+# Diagnóstico de Caminhos (remover após fix)
+with st.expander("🔍 Diagnóstico de Caminhos (Nuvem)"):
+    st.write(f"Diretório Base: {BASE_DIR}")
+    st.write(f"Arquivo de Dados: {DATA_PATH} (Existe: {os.path.exists(DATA_PATH)})")
+    st.write(f"Modelo A: {MODEL_A_PATH} (Existe: {os.path.exists(MODEL_A_PATH)})")
+    st.write(f"Arquivos na pasta leads_model: {os.listdir(BASE_DIR)}")
+    if os.path.exists(os.path.join(BASE_DIR, "models")):
+        st.write(f"Arquivos na pasta models: {os.listdir(os.path.join(BASE_DIR, 'models'))}")
+
 # Verificar modelos
 model_a, model_b_model = load_models()
 df = load_data()
