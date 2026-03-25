@@ -37,20 +37,29 @@ PRACAS = ["Praça 1", "Praça 2", "Praça 3", "Praça 4", "Praça 5", "Praça 6"
 
 
 # ── Cache: modelos e base ─────────────────────────────────────────────────────
+@st.cache_data
+def load_data():
+    return load_and_prepare(DATA_PATH)
+
+
 @st.cache_resource
 def load_models():
-    # Invalidate cache to load new model structures with MAPE
+    # Tenta carregar os modelos salvos; se falhar por qualquer motivo,
+    # treina em memória a partir dos dados (regressão linear é rápida).
     try:
         m_a = modelo_a.load_model(MODEL_A_PATH)
         m_b = modelo_b.load_model(MODEL_B_PATH)
         return m_a, m_b
-    except FileNotFoundError:
+    except Exception:
+        pass
+
+    try:
+        df = load_and_prepare(DATA_PATH)
+        m_a = modelo_a.train(df)
+        m_b = modelo_b.train(df)
+        return m_a, m_b
+    except Exception as e:
         return None, None
-
-
-@st.cache_data
-def load_data():
-    return load_and_prepare(DATA_PATH)
 
 
 # ── Header ────────────────────────────────────────────────────────────────────
@@ -65,8 +74,8 @@ df = load_data()
 
 if model_a is None or model_b_model is None:
     st.error(
-        "⚠️ Modelos não encontrados. "
-        "Execute `python train.py` no terminal antes de abrir a interface."
+        "⚠️ Erro ao carregar os modelos e ao tentar treinamento automático. "
+        "Verifique se o arquivo de dados está acessível em `leads_model/data/base_de_dados.xlsx`."
     )
     st.stop()
 
