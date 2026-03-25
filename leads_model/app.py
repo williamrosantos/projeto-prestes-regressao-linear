@@ -39,13 +39,9 @@ PRACAS = ["Praça 1", "Praça 2", "Praça 3", "Praça 4", "Praça 5", "Praça 6"
 # ── Cache: modelos e base ─────────────────────────────────────────────────────
 @st.cache_resource
 def load_models():
-    # Invalidate cache to load new model structures with MAPE
-    try:
-        m_a = modelo_a.load_model(MODEL_A_PATH)
-        m_b = modelo_b.load_model(MODEL_B_PATH)
-        return m_a, m_b
-    except FileNotFoundError:
-        return None, None
+    m_a = modelo_a.load_model(MODEL_A_PATH)
+    m_b = modelo_b.load_model(MODEL_B_PATH)
+    return m_a, m_b
 
 
 @st.cache_data
