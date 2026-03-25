@@ -39,9 +39,13 @@ PRACAS = ["Praça 1", "Praça 2", "Praça 3", "Praça 4", "Praça 5", "Praça 6"
 # ── Cache: modelos e base ─────────────────────────────────────────────────────
 @st.cache_resource
 def load_models():
-    m_a = modelo_a.load_model(MODEL_A_PATH)
-    m_b = modelo_b.load_model(MODEL_B_PATH)
-    return m_a, m_b
+    # Invalidate cache to load new model structures with MAPE
+    try:
+        m_a = modelo_a.load_model(MODEL_A_PATH)
+        m_b = modelo_b.load_model(MODEL_B_PATH)
+        return m_a, m_b
+    except FileNotFoundError:
+        return None, None
 
 
 @st.cache_data
@@ -53,14 +57,7 @@ def load_data():
 st.title("🏗️ Simulador de Leads — Prestes")
 st.caption("Modelo preditivo de geração e qualificação de leads · Jan/2024 → Fev/2026")
 
-# Diagnóstico de Caminhos (remover após fix)
-with st.expander("🔍 Diagnóstico de Caminhos (Nuvem)"):
-    st.write(f"Diretório Base: {BASE_DIR}")
-    st.write(f"Arquivo de Dados: {DATA_PATH} (Existe: {os.path.exists(DATA_PATH)})")
-    st.write(f"Modelo A: {MODEL_A_PATH} (Existe: {os.path.exists(MODEL_A_PATH)})")
-    st.write(f"Arquivos na pasta leads_model: {os.listdir(BASE_DIR)}")
-    if os.path.exists(os.path.join(BASE_DIR, "models")):
-        st.write(f"Arquivos na pasta models: {os.listdir(os.path.join(BASE_DIR, 'models'))}")
+
 
 # Verificar modelos
 model_a, model_b_model = load_models()
