@@ -338,18 +338,11 @@ with tab1:
         st.markdown("</div>", unsafe_allow_html=True)
 
     # ── Tabela de taxas históricas (largura total) ────────────────────────────
-    st.markdown("""
-<div style="margin-top:2.5rem; margin-bottom:0.5rem;">
-  <span style="font-size:0.7rem; font-weight:700; letter-spacing:1px;
-               color:#044d41; text-transform:uppercase;">Taxas Históricas por Praça</span>
-</div>
-""", unsafe_allow_html=True)
-
-    taxas = (
+    df_taxas = (
         df.groupby("praca")
         .agg(
             cpl_medio=("cpl", "mean"),
-            taxa_qualificacao=("taxa_qualificacao", "mean"),
+            taxa_qualif=("taxa_qualificacao", "mean"),
             taxa_visita=("taxa_visita", "mean"),
             taxa_reserva=("taxa_reserva", "mean"),
             meses=("mes", "count"),
@@ -358,42 +351,34 @@ with tab1:
         .reset_index()
     )
 
-    taxas_display = taxas.rename(columns={
-        "praca": "Praça",
-        "cpl_medio": "CPL Médio",
-        "taxa_qualificacao": "Taxa Qualificação",
-        "taxa_visita": "Taxa Visita",
-        "taxa_reserva": "Taxa Reserva",
-        "meses": "Meses na base",
-    })
-
-    taxas_display["CPL Médio"] = taxas_display["CPL Médio"].map(lambda x: f"R$ {x:,.2f}")
-    taxas_display["Taxa Qualificação"] = taxas_display["Taxa Qualificação"].map(lambda x: f"{x:.0%}")
-    taxas_display["Taxa Visita"] = taxas_display["Taxa Visita"].map(lambda x: f"{x:.0%}")
-    taxas_display["Taxa Reserva"] = taxas_display["Taxa Reserva"].map(lambda x: f"{x:.0%}")
-
-    header_cells = "".join(
-        f'<th style="background:#044d41; color:#ffffff; font-weight:700; letter-spacing:1px; '
-        f'text-transform:uppercase; font-size:0.73rem; padding:0.75rem 1rem; '
-        f'text-align:{"left" if i == 0 else "right"};">{col}</th>'
-        for i, col in enumerate(taxas_display.columns)
-    )
-
-    body_rows = ""
-    for idx, row in taxas_display.iterrows():
-        row_bg = "#ffffff" if idx % 2 == 0 else "#f4f4f4"
-        cells = "".join(
-            f'<td style="padding:0.65rem 1rem; font-size:0.85rem; color:#323232; '
-            f'background:{row_bg}; text-align:{"left" if i == 0 else "right"};">{val}</td>'
-            for i, val in enumerate(row)
-        )
-        body_rows += f"<tr>{cells}</tr>"
+    rows_html = ""
+    for i, row in df_taxas.iterrows():
+        bg = "#ffffff" if i % 2 == 0 else "#f4f4f4"
+        rows_html += f"""
+    <tr style="background:{bg};">
+        <td style="padding:1rem 1.25rem; font-size:1rem; color:#323232; font-weight:600; border-bottom:1px solid #ebebeb;">{row['praca']}</td>
+        <td style="padding:1rem 1.25rem; font-size:1rem; color:#323232; text-align:center; border-bottom:1px solid #ebebeb;">R$ {row['cpl_medio']:.2f}</td>
+        <td style="padding:1rem 1.25rem; font-size:1rem; color:#323232; text-align:center; border-bottom:1px solid #ebebeb;">{row['taxa_qualif']:.0%}</td>
+        <td style="padding:1rem 1.25rem; font-size:1rem; color:#323232; text-align:center; border-bottom:1px solid #ebebeb;">{row['taxa_visita']:.0%}</td>
+        <td style="padding:1rem 1.25rem; font-size:1rem; color:#323232; text-align:center; border-bottom:1px solid #ebebeb;">{row['taxa_reserva']:.0%}</td>
+        <td style="padding:1rem 1.25rem; font-size:1rem; color:#323232; text-align:center; border-bottom:1px solid #ebebeb;">{int(row['meses'])}</td>
+    </tr>"""
 
     st.markdown(f"""
-<div style="border-radius:6px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.08);">
-  <table style="width:100%; border-collapse:collapse;">
-    <thead><tr>{header_cells}</tr></thead>
-    <tbody>{body_rows}</tbody>
+<div style="margin-top:2rem;">
+  <p style="font-size:0.7rem; font-weight:700; letter-spacing:1px; color:#044d41; text-transform:uppercase; margin-bottom:0.75rem;">TAXAS HISTÓRICAS POR PRAÇA</p>
+  <table style="width:100%; border-collapse:collapse; font-family:'Lufga',sans-serif;">
+    <thead>
+      <tr style="background:#044d41;">
+        <th style="padding:0.9rem 1rem; color:#ffffff; font-weight:700; font-size:1rem; text-align:left;">Praça</th>
+        <th style="padding:0.9rem 1rem; color:#ffffff; font-weight:700; font-size:1rem; text-align:center;">CPL Médio</th>
+        <th style="padding:0.9rem 1rem; color:#ffffff; font-weight:700; font-size:1rem; text-align:center;">Taxa Qualificação</th>
+        <th style="padding:0.9rem 1rem; color:#ffffff; font-weight:700; font-size:1rem; text-align:center;">Taxa Visita</th>
+        <th style="padding:0.9rem 1rem; color:#ffffff; font-weight:700; font-size:1rem; text-align:center;">Taxa Reserva</th>
+        <th style="padding:0.9rem 1rem; color:#ffffff; font-weight:700; font-size:1rem; text-align:center;">Meses na Base</th>
+      </tr>
+    </thead>
+    <tbody>{rows_html}</tbody>
   </table>
 </div>
 """, unsafe_allow_html=True)
