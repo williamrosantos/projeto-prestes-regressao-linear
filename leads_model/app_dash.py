@@ -99,7 +99,7 @@ def _build_table(df_t, first_col_key, first_col_label, title):
         td = {
             "padding": "9px 14px", "fontSize": "0.82rem",
             "color": C["text"], "borderBottom": "1px solid #ebebeb",
-            "background": bg,
+            "background": bg, "whiteSpace": "nowrap",
         }
         cells = [html.Td(row[first_col_key], style={**td, "fontWeight": "600"})]
         if "praca" in df_t.columns and first_col_key != "praca":
@@ -262,11 +262,44 @@ input_panel = html.Div([
 })
 
 
+# ── Off-canvas histórico ───────────────────────────────────────────────────────
+offcanvas_historico = dbc.Offcanvas(
+    html.Div([
+        _make_hist_table(),
+        _make_emp_table(),
+    ], style={"paddingBottom": "2rem"}),
+    id="offcanvas-historico",
+    placement="end",
+    scrollable=True,
+    style={"width": "min(860px, 96vw)"},
+    title=html.Span("Dados Históricos", style={
+        "fontSize": "1rem", "fontWeight": "700",
+        "color": C["primary"], "letterSpacing": "0.5px",
+    }),
+)
+
+
 # ── Painel de resultados ───────────────────────────────────────────────────────
 results_panel = html.Div([
-    html.Div("Resultados", style={
-        "fontSize": "0.6rem", "fontWeight": "700", "letterSpacing": "1.2px",
-        "textTransform": "uppercase", "color": C["muted"], "marginBottom": "14px",
+    html.Div([
+        html.Div("Resultados", style={
+            "fontSize": "0.6rem", "fontWeight": "700", "letterSpacing": "1.2px",
+            "textTransform": "uppercase", "color": C["muted"],
+        }),
+        html.Button("Ver histórico →", id="btn-historico", n_clicks=0, style={
+            "background": "transparent",
+            "border": f"1px solid {C['border']}",
+            "borderRadius": "4px",
+            "color": C["primary"],
+            "fontSize": "0.72rem",
+            "fontWeight": "600",
+            "letterSpacing": "0.5px",
+            "padding": "4px 12px",
+            "cursor": "pointer",
+        }),
+    ], style={
+        "display": "flex", "justifyContent": "space-between",
+        "alignItems": "center", "marginBottom": "14px",
     }),
     dbc.Row([
         dbc.Col(_result_card("v-leads",  "s-leads",  "Leads Estimados"),               width=6),
@@ -291,13 +324,12 @@ app = dash.Dash(
 server = app.server  # expõe para deploy (Render, Railway, Gunicorn)
 
 app.layout = html.Div([
+    offcanvas_historico,
     html.Div([
         dbc.Row([
             dbc.Col(input_panel,   md=5),
             dbc.Col(results_panel, md=7),
         ], className="g-4 mb-2"),
-        _make_hist_table(),
-        _make_emp_table(),
     ], style={
         "maxWidth": "960px",
         "margin": "0 auto",
@@ -311,6 +343,16 @@ app.layout = html.Div([
 
 
 # ── Callbacks ──────────────────────────────────────────────────────────────────
+@app.callback(
+    Output("offcanvas-historico", "is_open"),
+    Input("btn-historico", "n_clicks"),
+    State("offcanvas-historico", "is_open"),
+    prevent_initial_call=True,
+)
+def toggle_historico(_, is_open):
+    return not is_open
+
+
 @app.callback(
     Output("emp-dd", "options"),
     Output("emp-dd", "value"),
