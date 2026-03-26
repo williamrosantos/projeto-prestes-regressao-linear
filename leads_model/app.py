@@ -158,6 +158,16 @@ section[data-testid="column"]:first-child > div > div {
     border-radius: 6px !important;
     background-color: #f9f9f9 !important;
     border: 1px solid rgba(4, 77, 65, 0.18) !important;
+    color: #1a1c1c !important;
+}
+
+/* Força cor do texto em todos os elementos internos dos inputs */
+.stSelectbox div[data-baseweb="select"] *,
+.stSelectbox span,
+.stSelectbox p,
+.stNumberInput input,
+.stTextInput input {
+    color: #1a1c1c !important;
 }
 
 .stTextInput input::placeholder {
