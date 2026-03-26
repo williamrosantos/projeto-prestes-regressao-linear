@@ -1,0 +1,18 @@
+/* ── Dropdowns — fonte interna ─────────────────────────────────────────────── */
+.Select-value-label,
+.Select-option,
+.Select-placeholder,
+.Select-menu-outer {
+    font-size: 0.88rem !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+/* ── Botão CALCULAR — hover ────────────────────────────────────────────────── */
+#btn-calcular {
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+#btn-calcular:hover {
+    background: #84e115 !important;
+    color: #044d41 !important;
+}
