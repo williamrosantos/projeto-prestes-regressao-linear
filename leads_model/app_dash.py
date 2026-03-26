@@ -242,12 +242,12 @@ results_panel = html.Div([
         "textTransform": "uppercase", "color": C["muted"], "marginBottom": "14px",
     }),
     dbc.Row([
-        dbc.Col(_result_card("v-leads",  "s-leads",  "Leads Estimados"),          width=6),
-        dbc.Col(_result_card("v-modelo", "s-modelo", "Leads Qualif. (Modelo)"),   width=6),
+        dbc.Col(_result_card("v-leads",  "s-leads",  "Leads Estimados"),               width=6),
+        dbc.Col(_result_card("v-modelo", "s-modelo", "Qualificados — Modelo Preditivo"), width=6),
     ], className="g-3 mb-3"),
     dbc.Row([
-        dbc.Col(_result_card("v-taxa",   "s-taxa",   "Leads Qualif. (Taxa)"),     width=6),
-        dbc.Col(_result_card("v-cpl",    "s-cpl",    "CPL Implícito"),            width=6),
+        dbc.Col(_result_card("v-taxa",   "s-taxa",   "Qualificados — Histórico da Praça"), width=6),
+        dbc.Col(_result_card("v-cpl",    "s-cpl",    "CPL Estimado"),                      width=6),
     ], className="g-3"),
 ])
 
