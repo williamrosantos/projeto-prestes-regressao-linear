@@ -86,20 +86,7 @@ def _result_card(value_id, sub_id, label):
     })
 
 
-def _make_hist_table():
-    df_t = (
-        df.groupby("praca")
-        .agg(
-            cpl_medio    =("cpl",               "mean"),
-            taxa_qualif  =("taxa_qualificacao",  "mean"),
-            taxa_visita  =("taxa_visita",        "mean"),
-            taxa_reserva =("taxa_reserva",       "mean"),
-            meses        =("mes",                "count"),
-        )
-        .round(4)
-        .reset_index()
-    )
-
+def _build_table(df_t, first_col_key, first_col_label, title):
     th = {
         "padding": "9px 14px", "color": "#fff", "fontWeight": "700",
         "fontSize": "0.78rem", "background": C["primary"], "border": "none",
@@ -114,30 +101,37 @@ def _make_hist_table():
             "color": C["text"], "borderBottom": "1px solid #ebebeb",
             "background": bg,
         }
-        rows.append(html.Tr([
-            html.Td(row["praca"],                          style={**td, "fontWeight": "600"}),
-            html.Td(f"R$ {row['cpl_medio']:.2f}",          style={**td, "textAlign": "center"}),
-            html.Td(f"{row['taxa_qualif']:.0%}",           style={**td, "textAlign": "center"}),
-            html.Td(f"{row['taxa_visita']:.0%}",           style={**td, "textAlign": "center"}),
-            html.Td(f"{row['taxa_reserva']:.0%}",          style={**td, "textAlign": "center"}),
-            html.Td(str(int(row["meses"])),                style={**td, "textAlign": "center"}),
-        ]))
+        cells = [html.Td(row[first_col_key], style={**td, "fontWeight": "600"})]
+        if "praca" in df_t.columns and first_col_key != "praca":
+            cells.append(html.Td(row["praca"], style={**td, "color": C["muted"]}))
+        cells += [
+            html.Td(f"R$ {row['cpl_medio']:.2f}",   style={**td, "textAlign": "center"}),
+            html.Td(f"{row['taxa_qualif']:.0%}",     style={**td, "textAlign": "center"}),
+            html.Td(f"{row['taxa_visita']:.0%}",     style={**td, "textAlign": "center"}),
+            html.Td(f"{row['taxa_reserva']:.0%}",    style={**td, "textAlign": "center"}),
+            html.Td(str(int(row["meses"])),          style={**td, "textAlign": "center"}),
+        ]
+        rows.append(html.Tr(cells))
+
+    header_cells = [html.Th(first_col_label, style=th)]
+    if "praca" in df_t.columns and first_col_key != "praca":
+        header_cells.append(html.Th("Praça", style=th))
+    header_cells += [
+        html.Th("CPL Médio",     style={**th, "textAlign": "center"}),
+        html.Th("Taxa Qualif.",  style={**th, "textAlign": "center"}),
+        html.Th("Taxa Visita",   style={**th, "textAlign": "center"}),
+        html.Th("Taxa Reserva",  style={**th, "textAlign": "center"}),
+        html.Th("Meses na Base", style={**th, "textAlign": "center"}),
+    ]
 
     return html.Div([
-        html.Div("Taxas Históricas por Praça", style={
+        html.Div(title, style={
             "fontSize": "0.6rem", "fontWeight": "700", "letterSpacing": "1.2px",
             "textTransform": "uppercase", "color": C["primary"], "marginBottom": "10px",
         }),
         html.Div(
             html.Table([
-                html.Thead(html.Tr([
-                    html.Th("Praça",            style=th),
-                    html.Th("CPL Médio",        style={**th, "textAlign": "center"}),
-                    html.Th("Taxa Qualif.",     style={**th, "textAlign": "center"}),
-                    html.Th("Taxa Visita",      style={**th, "textAlign": "center"}),
-                    html.Th("Taxa Reserva",     style={**th, "textAlign": "center"}),
-                    html.Th("Meses na Base",    style={**th, "textAlign": "center"}),
-                ])),
+                html.Thead(html.Tr(header_cells)),
                 html.Tbody(rows),
             ], style={"width": "100%", "borderCollapse": "collapse"}),
             style={
@@ -146,6 +140,39 @@ def _make_hist_table():
             },
         ),
     ], style={"marginTop": "28px"})
+
+
+def _make_hist_table():
+    df_t = (
+        df.groupby("praca")
+        .agg(
+            cpl_medio    =("cpl",               "mean"),
+            taxa_qualif  =("taxa_qualificacao",  "mean"),
+            taxa_visita  =("taxa_visita",        "mean"),
+            taxa_reserva =("taxa_reserva",       "mean"),
+            meses        =("mes",                "count"),
+        )
+        .round(4)
+        .reset_index()
+    )
+    return _build_table(df_t, "praca", "Praça", "Taxas Históricas por Praça")
+
+
+def _make_emp_table():
+    df_t = (
+        df.groupby(["empreendimento", "praca"])
+        .agg(
+            cpl_medio    =("cpl",               "mean"),
+            taxa_qualif  =("taxa_qualificacao",  "mean"),
+            taxa_visita  =("taxa_visita",        "mean"),
+            taxa_reserva =("taxa_reserva",       "mean"),
+            meses        =("mes",                "count"),
+        )
+        .round(4)
+        .reset_index()
+        .sort_values(["praca", "empreendimento"])
+    )
+    return _build_table(df_t, "empreendimento", "Empreendimento", "Taxas Históricas por Empreendimento")
 
 
 # ── Painel de inputs ───────────────────────────────────────────────────────────
@@ -270,6 +297,7 @@ app.layout = html.Div([
             dbc.Col(results_panel, md=7),
         ], className="g-4 mb-2"),
         _make_hist_table(),
+        _make_emp_table(),
     ], style={
         "maxWidth": "960px",
         "margin": "0 auto",
@@ -300,10 +328,15 @@ def cb_empreendimentos(praca):
 def cb_mes_ciclo(emp):
     if not emp:
         return ""
-    mc = int(df[df["empreendimento"] == emp]["mes_ciclo"].max())
+    subset = df[df["empreendimento"] == emp]
+    mc     = int(subset["mes_ciclo"].max())
+    taxa   = subset["taxa_qualificacao"].mean()
     return [
         html.Span("Mês do ciclo: ", style={"fontWeight": "600", "color": C["primary"]}),
         html.Span(f"{mc}  (calculado automaticamente)"),
+        html.Br(),
+        html.Span("Taxa qualif. histórica: ", style={"fontWeight": "600", "color": C["primary"]}),
+        html.Span(f"{taxa:.0%}  (média do empreendimento)"),
     ]
 
 
