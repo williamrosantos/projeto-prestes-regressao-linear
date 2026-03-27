@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 import pandas as pd
@@ -12,6 +13,15 @@ import modelo_a
 import modelo_b
 
 app = FastAPI(title="Prestes Lead Predictor API")
+
+# Configuração de CORS para permitir que o Live Server (Porta 5500) acesse a API (Porta 8000)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Em produção, especifique as URLs permitidas
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Configurações de caminhos
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -42,79 +52,101 @@ class PredictionRequest(BaseModel):
     mes_calendario: int
     taxa_manual: Optional[float] = None
 
+@app.get("/api/health")
+async def health():
+    return {"status": "ok", "resources_loaded": data_cache["df"] is not None}
+
 @app.get("/api/metadata")
 async def get_metadata():
-    df, _, _ = get_resources()
-    pracas = sorted(df["praca"].unique().tolist())
-    
-    # Criar mapeamento de praça -> empreendimentos
-    mapping = {}
-    for praca in pracas:
-        mapping[praca] = sorted(df[df["praca"] == praca]["empreendimento"].unique().tolist())
-    
-    # Taxas históricas para a tabela
-    df_taxas = (
-        df.groupby("praca")
-        .agg(
-            cpl_medio=("cpl", "mean"),
-            taxa_qualif=("taxa_qualificacao", "mean"),
-            taxa_visita=("taxa_visita", "mean"),
-            taxa_reserva=("taxa_reserva", "mean"),
-            meses=("mes", "count"),
+    try:
+        df, _, _ = get_resources()
+        pracas = sorted(df["praca"].unique().tolist())
+        
+        # Criar mapeamento de praça -> empreendimentos
+        mapping = {}
+        for praca in pracas:
+            mapping[praca] = sorted(df[df["praca"] == praca]["empreendimento"].unique().tolist())
+        
+        # Taxas históricas para a tabela
+        df_taxas = (
+            df.groupby("praca")
+            .agg(
+                cpl_medio=("cpl", "mean"),
+                taxa_qualif=("taxa_qualificacao", "mean"),
+                taxa_visita=("taxa_visita", "mean"),
+                taxa_reserva=("taxa_reserva", "mean"),
+                meses=("mes", "count"),
+            )
+            .fillna(0) # Garantir que não existam NaNs no JSON
+            .round(4)
+            .reset_index()
         )
-        .round(4)
-        .reset_index()
-    )
-    
-    return {
-        "pracas": pracas,
-        "mapping": mapping,
-        "historico": df_taxas.to_dict(orient="records"),
-        "summary": {
-            "total_registros": len(df),
-            "empreendimentos": df["empreendimento"].nunique(),
-            "periodo": f"{df['mes'].min().strftime('%b/%Y')} -> {df['mes'].max().strftime('%b/%Y')}"
+        
+        return {
+            "pracas": pracas,
+            "mapping": mapping,
+            "historico": df_taxas.to_dict(orient="records"),
+            "summary": {
+                "total_registros": len(df),
+                "empreendimentos": df["empreendimento"].nunique(),
+                "periodo": f"{df['mes'].min().strftime('%b/%Y')} -> {df['mes'].max().strftime('%b/%Y')}"
+            }
         }
-    }
+    except Exception as e:
+        print(f"ERRO NO METADATA: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/predict")
 async def predict(req: PredictionRequest):
-    df, m_a, m_b_model = get_resources()
-    
-    # 1. Determinar mes_ciclo automaticamente (último conhecido para aquele empreendimento)
-    mes_ciclo = int(df[df["empreendimento"] == req.empreendimento]["mes_ciclo"].max())
-    
-    # 2. Predição Modelo A
-    leads_res = modelo_a.predict_leads(
-        m_a, req.investimento, req.praca, mes_ciclo, req.mes_calendario
-    )
-    leads_est = leads_res["estimativa"]
-    
-    # 3. Predição Modelo B
-    pred_b = modelo_b.predict_qualificados(
-        model_dict=m_b_model,
-        leads=leads_est,
-        praca=req.praca,
-        mes_ciclo=mes_ciclo,
-        mes_calendario=req.mes_calendario,
-        taxa_manual=req.taxa_manual,
-        df_historico=df,
-    )
-    
-    cpl = req.investimento / leads_est if leads_est > 0 else 0
-    
-    return {
-        "leads_estimados": int(leads_est),
-        "leads_qualificados_modelo": int(pred_b["pred_modelo"]),
-        "leads_qualificados_taxa": int(pred_b["pred_taxa"]),
-        "cpl": round(cpl, 2),
-        "taxa_usada": pred_b["taxa_usada"],
-        "origem_taxa": pred_b["origem_taxa"]
-    }
+    try:
+        df, m_a, m_b_model = get_resources()
+        
+        # 1. Determinar mes_ciclo automaticamente
+        subset = df[df["empreendimento"] == req.empreendimento]
+        if subset.empty:
+            raise HTTPException(status_code=400, detail="Empreendimento não encontrado")
+            
+        mes_ciclo = int(subset["mes_ciclo"].max())
+        
+        # 2. Predição Modelo A
+        leads_res = modelo_a.predict_leads(
+            m_a, req.investimento, req.praca, mes_ciclo, req.mes_calendario
+        )
+        leads_est = leads_res["estimativa"]
+        
+        # 3. Predição Modelo B
+        pred_b = modelo_b.predict_qualificados(
+            model_dict=m_b_model,
+            leads=leads_est,
+            praca=req.praca,
+            mes_ciclo=mes_ciclo,
+            mes_calendario=req.mes_calendario,
+            taxa_manual=req.taxa_manual,
+            df_historico=df,
+        )
+        
+        cpl = req.investimento / leads_est if leads_est > 0 else 0
+        
+        return {
+            "leads_estimados": int(leads_est),
+            "leads_qualificados_modelo": int(pred_b["pred_modelo"]),
+            "leads_qualificados_taxa": int(pred_b["pred_taxa"]),
+            "cpl": round(cpl, 2),
+            "taxa_usada": pred_b["taxa_usada"],
+            "origem_taxa": pred_b["origem_taxa"]
+        }
+    except Exception as e:
+        print(f"ERRO NO PREDICT: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Servir frontend estático
 os.makedirs(os.path.join(BASE_DIR, "static"), exist_ok=True)
 app.mount("/", StaticFiles(directory=os.path.join(BASE_DIR, "static"), html=True), name="static")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print("\n" + "="*50)
+    print("--- SERVIDOR PRESTES (API + FRONTEND) ---")
+    print(f"Base de dados: {DATA_PATH}")
+    print("Acesse o Simulador em: http://127.0.0.1:8000")
+    print("="*50 + "\n")
+    uvicorn.run(app, host="127.0.0.1", port=8000)

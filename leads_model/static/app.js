@@ -14,6 +14,16 @@ document.addEventListener('DOMContentLoaded', () => {
         "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
     ];
 
+    console.log("App.js carregado. Iniciando campos estáticos...");
+
+    // ── Determinar URL da API ────────────────────────────
+    // Se estiver rodando no Live Server (porta 5500, etc), força a chamada para a porta 8000 no mesmo IP/Host
+    const currentHost = window.location.hostname;
+    const API_BASE = (window.location.port !== '8000') 
+        ? `http://${currentHost}:8000` 
+        : '';
+    console.log(`Usando Base da API: ${API_BASE || 'Local (Porta 8000)'}`);
+
     // ── 1. Inicializar Campos Estáticos ──────────────────
     MONTHS.forEach((m, i) => {
         const opt = document.createElement('option');
@@ -21,56 +31,81 @@ document.addEventListener('DOMContentLoaded', () => {
         opt.textContent = m;
         monthSelect.appendChild(opt);
     });
-    // Marcar Março como default (index 2)
-    monthSelect.selectedIndex = 2;
+    monthSelect.selectedIndex = 2; // Março
+
+    // Inicializar selects com "Carregando..."
+    pracaSelect.innerHTML = '<option value="">Carregando...</option>';
+    projectSelect.innerHTML = '<option value="">Aguardando praça...</option>';
 
     // ── 2. Carregar Metadados da API ──────────────────────
     async function loadMetadata() {
+        console.log(`Buscando metadados em ${API_BASE}/api/metadata...`);
         showLoader(true);
         try {
-            const resp = await fetch('/api/metadata');
-            const data = await resp.json();
+            const resp = await fetch(`${API_BASE}/api/metadata`);
+            console.log("Resposta do servidor:", resp.status, resp.statusText);
+            
+            if (!resp.ok) {
+                const errorText = await resp.text();
+                throw new Error(`Erro na API (${resp.status}): ${errorText}`);
+            }
 
-            pracaMapping = data.mapping;
+            const data = await resp.json();
+            console.log("Dados recebidos:", data);
+
+            pracaMapping = data.mapping || {};
 
             // Popular Praças
             pracaSelect.innerHTML = '';
-            data.pracas.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p;
-                opt.textContent = p;
-                pracaSelect.appendChild(opt);
-            });
-
-            // Trigger inicial de Empreendimentos
-            updateProjects(data.pracas[0]);
+            if (data.pracas && data.pracas.length > 0) {
+                data.pracas.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p;
+                    opt.textContent = p;
+                    pracaSelect.appendChild(opt);
+                });
+                // Trigger inicial de Empreendimentos
+                updateProjects(data.pracas[0]);
+            } else {
+                pracaSelect.innerHTML = '<option value="">Nenhuma praça encontrada</option>';
+            }
 
             // Popular Tabela de Histórico
-            populateHistory(data.historico);
+            if (data.historico) {
+                populateHistory(data.historico);
+            }
 
             // Resumo do Rodapé
-            document.getElementById('db-summary').innerHTML = `
-                <div class="meta-item"><span>Total Registros:</span> ${data.summary.total_registros}</div>
-                <div class="meta-item"><span>Período:</span> ${data.summary.periodo}</div>
-            `;
+            if (data.summary) {
+                document.getElementById('db-summary').innerHTML = `
+                    <div class="meta-item"><span>Total Registros:</span> ${data.summary.total_registros}</div>
+                    <div class="meta-item"><span>Período:</span> ${data.summary.periodo}</div>
+                `;
+            }
 
         } catch (err) {
-            console.error('Erro ao carregar metadados:', err);
-            notification('Erro de conexão com o servidor.', 'error');
+            console.error('Erro crítico no loadMetadata:', err);
+            notification(`ERRO DE CONEXÃO: Certifique-se de que o servidor Python está rodando e acesse via http://localhost:8000\n\nDetalhe: ${err.message}`, 'error');
+            pracaSelect.innerHTML = '<option value="">Erro ao carregar</option>';
         } finally {
             showLoader(false);
         }
     }
 
     function updateProjects(praca) {
+        console.log("Atualizando projetos para praça:", praca);
         projectSelect.innerHTML = '';
         const projects = pracaMapping[praca] || [];
-        projects.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p;
-            opt.textContent = p;
-            projectSelect.appendChild(opt);
-        });
+        if (projects.length > 0) {
+            projects.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p;
+                opt.textContent = p;
+                projectSelect.appendChild(opt);
+            });
+        } else {
+            projectSelect.innerHTML = '<option value="">Nenhum empreendimento</option>';
+        }
     }
 
     function populateHistory(history) {
@@ -105,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         showLoader(true);
         try {
-            const resp = await fetch('/api/predict', {
+            const resp = await fetch(`${API_BASE}/api/predict`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
