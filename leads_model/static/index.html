@@ -29,6 +29,9 @@
                 <div class="input-group">
                     <label for="empreendimento">Empreendimento</label>
                     <select id="empreendimento" required></select>
+                    <div class="meta-ciclo" id="meta-ciclo" style="display:none;">
+                        Mês do ciclo: <strong id="ciclo-valor">—</strong> <span>(calculado automaticamente)</span>
+                    </div>
                 </div>
 
                 <div class="input-group">
@@ -59,15 +62,21 @@
             <section class="results-grid" id="results-display">
                 <!-- Cards will be injected here -->
                 <div class="empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#044d41" stroke-width="1.5" opacity="0.3">
+                        <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+                    </svg>
                     <h3>Pronto para simular</h3>
-                    <p>Ajuste os parâmetros à esquerda e clique em calcular para visualizar as predições de leads.</p>
+                    <p>Ajuste os parâmetros à esquerda e clique em <strong>Calcular Simulador</strong> para visualizar as predições.</p>
                 </div>
             </section>
 
             <section class="history-section card">
                 <header class="section-header">
-                    <h2>Taxas Históricas por Praça</h2>
-                    <p>Valores agregados da base de dados histórica</p>
+                    <div>
+                        <h2>Taxas Históricas por Praça</h2>
+                        <p>Valores agregados da base de dados histórica</p>
+                    </div>
+                    <button type="button" class="btn-outline" id="btn-modal-emp">Ver por Empreendimento</button>
                 </header>
                 <div class="table-container">
                     <table id="history-table">
@@ -91,6 +100,34 @@
     </div>
 
     <!-- Modais or Tooltips if needed -->
+    <div id="modal-empreendimento" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div>
+                    <h2>Taxas Históricas por Empreendimento</h2>
+                    <p>Médias calculadas sobre o histórico completo de cada empreendimento</p>
+                </div>
+                <button class="modal-close" id="btn-modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <table id="modal-table">
+                    <thead>
+                        <tr>
+                            <th>Empreendimento</th>
+                            <th>Praça</th>
+                            <th>CPL Médio</th>
+                            <th>Qualificação</th>
+                            <th>Visita</th>
+                            <th>Reserva</th>
+                            <th>Meses</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div id="loader" class="hidden">
         <div class="spinner"></div>
     </div>

@@ -37,6 +37,51 @@ document.addEventListener('DOMContentLoaded', () => {
     pracaSelect.innerHTML = '<option value="">Carregando...</option>';
     projectSelect.innerHTML = '<option value="">Aguardando praça...</option>';
 
+    // ── 1.1 Modal e Ciclo ────────────────────────────────
+    const modalOverlay = document.getElementById('modal-empreendimento');
+    const modalBody = document.getElementById('modal-body');
+
+    document.getElementById('btn-modal-emp').addEventListener('click', async () => {
+        if (modalBody.innerHTML === '') {
+            const resp = await fetch(`${API_BASE}/api/historico-empreendimentos`);
+            const data = await resp.json();
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.empreendimento}</td>
+                    <td>${row.praca}</td>
+                    <td>R$ ${row.cpl_medio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td>${(row.taxa_qualif * 100).toFixed(0)}%</td>
+                    <td>${(row.taxa_visita * 100).toFixed(0)}%</td>
+                    <td>${(row.taxa_reserva * 100).toFixed(0)}%</td>
+                    <td>${row.meses}</td>
+                `;
+                modalBody.appendChild(tr);
+            });
+        }
+        modalOverlay.classList.remove('hidden');
+    });
+
+    document.getElementById('btn-modal-close').addEventListener('click', () => {
+        modalOverlay.classList.add('hidden');
+    });
+
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) modalOverlay.classList.add('hidden');
+    });
+
+    async function updateCiclo(empreendimento) {
+        if (!empreendimento) return;
+        try {
+            const resp = await fetch(`${API_BASE}/api/ciclo?empreendimento=${encodeURIComponent(empreendimento)}`);
+            const data = await resp.json();
+            document.getElementById('ciclo-valor').textContent = data.mes_ciclo;
+            document.getElementById('meta-ciclo').style.display = 'block';
+        } catch (err) {
+            console.error("Erro ao carregar ciclo:", err);
+        }
+    }
+
     // ── 2. Carregar Metadados da API ──────────────────────
     async function loadMetadata() {
         console.log(`Buscando metadados em ${API_BASE}/api/metadata...`);
@@ -106,6 +151,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             projectSelect.innerHTML = '<option value="">Nenhum empreendimento</option>';
         }
+        // Atualizar ciclo para o primeiro projeto da lista
+        if (projectSelect.value) updateCiclo(projectSelect.value);
     }
 
     function populateHistory(history) {
@@ -126,6 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── 3. Eventos ───────────────────────────────────────
     pracaSelect.addEventListener('change', (e) => updateProjects(e.target.value));
+    projectSelect.addEventListener('change', (e) => updateCiclo(e.target.value));
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
