@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prestes — Simulador de Leads</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="glass-background"></div>
+    
+    <div class="app-container">
+        <!-- Sidebar: Inputs -->
+        <aside class="sidebar card">
+            <div class="logo-container">
+                <h1 class="brand-text">Prestes</h1>
+                <div class="brand-accent"></div>
+            </div>
+            
+            <p class="sidebar-intro">Modelo Preditivo de Leads<br><span>Jan/2024 → Fev/2026</span></p>
+
+            <form id="simulation-form">
+                <div class="input-group">
+                    <label for="praca">Praça</label>
+                    <select id="praca" required></select>
+                </div>
+
+                <div class="input-group">
+                    <label for="empreendimento">Empreendimento</label>
+                    <select id="empreendimento" required></select>
+                </div>
+
+                <div class="input-group">
+                    <label for="investimento">Investimento em Mídia (R$)</label>
+                    <input type="number" id="investimento" value="15000" step="500" min="0" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="mes">Mês Calendário</label>
+                    <select id="mes"></select>
+                </div>
+
+                <div class="input-group">
+                    <label for="taxa-manual">Taxa de Qualificação (%) — Opcional</label>
+                    <input type="number" id="taxa-manual" placeholder="Ex: 35" step="0.1" min="0" max="100">
+                </div>
+
+                <button type="submit" id="btn-calculate" class="btn-primary">Calcular Simulador</button>
+            </form>
+
+            <div class="summary-meta" id="db-summary">
+                <!-- Summary info from API -->
+            </div>
+        </aside>
+
+        <!-- Main Content: Results -->
+        <main class="main-content">
+            <section class="results-grid" id="results-display">
+                <!-- Cards will be injected here -->
+                <div class="empty-state">
+                    <h3>Pronto para simular</h3>
+                    <p>Ajuste os parâmetros à esquerda e clique em calcular para visualizar as predições de leads.</p>
+                </div>
+            </section>
+
+            <section class="history-section card">
+                <header class="section-header">
+                    <h2>Taxas Históricas por Praça</h2>
+                    <p>Valores agregados da base de dados histórica</p>
+                </header>
+                <div class="table-container">
+                    <table id="history-table">
+                        <thead>
+                            <tr>
+                                <th>Praça</th>
+                                <th>CPL Médio</th>
+                                <th>Qualificação</th>
+                                <th>Visita</th>
+                                <th>Reserva</th>
+                                <th>Meses</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body">
+                            <!-- Injected rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modais or Tooltips if needed -->
+    <div id="loader" class="hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
