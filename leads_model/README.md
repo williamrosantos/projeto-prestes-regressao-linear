@@ -1,25 +1,47 @@
-# Projeto de Regressão Linear — Predição de Leads
+# Lead Predictor — Prestes (Modelo e Scripts)
 
-Manual de execução do sistema simulador.
+Este diretório contém a lógica de processamento, treinamento e predição dos modelos de leads da Prestes.
 
-## 🚀 Como rodar
-
-### 1. Backend API
-Para iniciar o servidor de predição, execute os seguintes comandos no terminal:
-
-```bash
-cd leads_model
-python -m uvicorn api:app --reload --port 8000
-```
-
-O servidor estará disponível em: `http://127.0.0.1:8000`.
-
-### 2. Frontend HTML
-O frontend deve ser aberto através do **Live Server** no VS Code para garantir que as chamadas de API funcionem corretamente:
-
-1.  Abra o arquivo `leads_model/static/index.html`.
-2.  Clique com o botão direito e selecione **"Open with Live Server"**.
-3.  A porta padrão será `5500`.
+> [!TIP]
+> Para uma visão completa do histórico, métricas e status do projeto, consulte o arquivo **[PROJETO_RESUMO.md](../PROJETO_RESUMO.md)** na raiz.
 
 ---
-**Nota**: Certifique-se de que o backend está rodando antes de realizar simulações no frontend.
+
+## 🚀 Como Executar
+
+O projeto possui duas interfaces principais:
+
+### 1. Simulador Interativo (Oficial)
+Recomendado para simulações rápidas pela equipe de marketing.
+```bash
+streamlit run app.py
+```
+
+### 2. API de Integração
+Servidor FastAPI que disponibiliza endpoints para outros sistemas e serve o dashboard estático.
+```bash
+python server.py
+```
+
+### 3. Linha de Comando (CLI)
+Para predições rápidas diretamente no terminal:
+```bash
+python predict.py --modo completo --investimento 15000 --praca "Praça 1" --mes_ciclo 6 --mes 3
+```
+
+---
+
+## 🛠️ Manutenção
+
+Sempre que a base de dados em `data/` for alterada, execute o retreinamento:
+```bash
+python train.py
+```
+
+---
+
+## 📂 Pasta de Documentação
+Para guias detalhados, consulte a pasta **[docs/](./docs/)**:
+- [Uso Operacional](./docs/uso.md)
+- [Detalhes do Treinamento](./docs/treinamento.md)
+- [Passo a Passo de Construção](./docs/construcao.md)

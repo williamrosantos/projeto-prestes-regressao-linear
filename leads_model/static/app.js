@@ -17,12 +17,9 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("App.js carregado. Iniciando campos estáticos...");
 
     // ── Determinar URL da API ────────────────────────────
-    // Se estiver rodando no Live Server (porta 5500, etc), força a chamada para a porta 8000 no mesmo IP/Host
-    const currentHost = window.location.hostname;
-    const API_BASE = (window.location.port !== '8000') 
-        ? `http://${currentHost}:8000` 
-        : '';
-    console.log(`Usando Base da API: ${API_BASE || 'Local (Porta 8000)'}`);
+    // Usar caminhos relativos para funcionar em qualquer porta (ex: 3001)
+    const API_BASE = ''; 
+    console.log(`Usando Base da API: ${API_BASE || 'Mesma porta do Frontend'}`);
 
     // ── 1. Inicializar Campos Estáticos ──────────────────
     MONTHS.forEach((m, i) => {

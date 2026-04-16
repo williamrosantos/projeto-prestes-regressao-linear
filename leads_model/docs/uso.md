@@ -135,5 +135,23 @@ O `mes_ciclo` representa **quantos meses aquele empreendimento já está ativo**
   Leads estimados       : 417
   Leads qualif. (modelo): 105
   Leads qualif. (taxa 26,2%): 109  [histórico (Praça 1)]
-  CPL implícito         : R$ 35,96
 ```
+
+---
+
+## 7. Interfaces Web
+
+### Simulador Interativo (Streamlit)
+Interface visual para simulações rápidas e visualização de taxas históricas.
+```bash
+streamlit run app.py
+```
+Acesse em: `http://localhost:8501`
+
+### API e Dashboard Estático (FastAPI)
+Para integração com outros sistemas ou uso do dashboard HTML leve.
+```bash
+python server.py
+```
+Acesse o simulador estático em: `http://127.0.0.1:8000`
+Acesse a documentação da API em: `http://127.0.0.1:8000/docs`

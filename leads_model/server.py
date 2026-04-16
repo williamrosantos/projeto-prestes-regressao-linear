@@ -96,6 +96,43 @@ async def get_metadata():
         print(f"ERRO NO METADATA: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/historico-empreendimentos")
+async def get_historico_empreendimentos():
+    try:
+        df, _, _ = get_resources()
+        df_taxas = (
+            df.groupby(["empreendimento", "praca"])
+            .agg(
+                cpl_medio=("cpl", "mean"),
+                taxa_qualif=("taxa_qualificacao", "mean"),
+                taxa_visita=("taxa_visita", "mean"),
+                taxa_reserva=("taxa_reserva", "mean"),
+                meses=("mes", "count"),
+            )
+            .fillna(0)
+            .round(4)
+            .reset_index()
+            .sort_values(by="empreendimento")
+        )
+        return df_taxas.to_dict(orient="records")
+    except Exception as e:
+        print(f"ERRO NO HISTORICO EMPREENDIMENTOS: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/ciclo")
+async def get_ciclo(empreendimento: str):
+    try:
+        df, _, _ = get_resources()
+        subset = df[df["empreendimento"] == empreendimento]
+        if subset.empty:
+            raise HTTPException(status_code=404, detail="Empreendimento não encontrado")
+        
+        mes_ciclo = int(subset["mes_ciclo"].max())
+        return {"mes_ciclo": mes_ciclo}
+    except Exception as e:
+        print(f"ERRO NO CICLO: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/predict")
 async def predict(req: PredictionRequest):
     try:
