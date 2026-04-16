@@ -1,4 +1,5 @@
-import { useState, useEffect, CSSProperties } from "react";
+import { useState, useEffect } from "react";
+import type { CSSProperties } from "react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -21,6 +22,9 @@ interface TimelineNode {
   leads_qualificados: number;
   cpl: number;
 }
+
+// URL da API: usa variável de ambiente em produção, localhost em dev
+const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
 
 const MONTHS_ABBR = ["","Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const MONTHS_FULL = ["","Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -109,7 +113,7 @@ export default function App() {
 
   // Carrega metadados da API
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/metadata")
+    fetch(`${API_URL}/api/metadata`)
       .then((r) => { if (!r.ok) throw new Error("API error"); return r.json(); })
       .then((d) => {
         setPracas(d.pracas || []);
@@ -125,7 +129,7 @@ export default function App() {
   const handleSimulate = async () => {
     setLoading(true);
     try {
-      const resp = await fetch("http://127.0.0.1:8000/api/simulate-lifecycle", {
+      const resp = await fetch(`${API_URL}/api/simulate-lifecycle`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -569,8 +573,8 @@ export default function App() {
                         fontWeight: 700, fontSize: "0.78rem", marginBottom: 6,
                       }}
                       itemStyle={{ color: "var(--text-muted)", fontWeight: 300, fontSize: "0.75rem" }}
-                      formatter={(value: number, name: string) => [
-                        fmt(value),
+                      formatter={(value, name) => [
+                        fmt(Number(value)),
                         name === "leads" ? "leads brutos" : "leads qualificados",
                       ]}
                       labelFormatter={(l) => `mês de ciclo: ${l}`}

@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: simulador-leads-prestes
+    name: prestes-simulador-api
     runtime: python
     buildCommand: pip install -r leads_model/requirements.txt
-    startCommand: cd leads_model && uvicorn api:app --host 0.0.0.0 --port $PORT
+    startCommand: cd leads_model && uvicorn server:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
-        value: 3.12.0
+        value: "3.11.0"
