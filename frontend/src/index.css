@@ -1,0 +1,134 @@
+@import "tailwindcss";
+/* Fonte Outfit e Lufga carregadas via <link> no index.html */
+
+/* ════════════════════════════════════════════════════════════
+   PRESTES — DESIGN SYSTEM
+   Baseado no brandbook oficial
+
+   PALETA:
+     Verde Prestes (Accent)  → #84E115  (uso: 10% — CTAs, grafismos)
+     Verde Escuro (Primary)  → #044D41  (uso: 20% em light, institucional)
+     Branco                  → #FFFFFF
+     Chumbo                  → #323232  (base do dark mode)
+     Preto                   → #000000
+
+   TEMAS:
+     Light → Vittace: 70% Branco | 20% Verde Escuro | 10% Verde Prestes
+     Dark  → Vista:  70% Chumbo  | 20% Branco       | 10% Verde Prestes
+
+   TIPOGRAFIA:
+     Família: Lufga (fallback: Outfit → system)
+     Bold  → títulos e subtítulos
+     Light → texto corrido e labels
+
+   REGRAS:
+     ✗ Nunca drop shadow em logos/headings principais
+     ✗ Nunca distorção, rotação ou outline na tipografia
+     ✗ Verde Escuro apenas para uso institucional no dark mode
+════════════════════════════════════════════════════════════ */
+
+/* ── LIGHT — Vittace (70/20/10) ──────────────────────────── */
+:root,
+[data-theme="light"] {
+  --bg:             #f4f4f4;          /* fundo geral (off-white) */
+  --bg-card:        #ffffff;          /* cards, painéis */
+  --bg-sidebar:     #ffffff;          /* sidebar */
+  --border:         rgba(4,77,65,.12);
+  --text-heading:   #044d41;          /* títulos (Verde Escuro) */
+  --text-body:      #323232;          /* texto corrido (Chumbo) */
+  --text-muted:     #6b6b6b;          /* secundário */
+  --input-bg:       #f9f9f9;
+  --input-border:   rgba(4,77,65,.15);
+  --accent:         #84e115;          /* Verde Prestes 10% */
+  --accent-bg:      rgba(132,225,21,.08);
+  --accent-border:  rgba(132,225,21,.3);
+  --header-bg:      #044d41;          /* header sempre verde escuro */
+  --header-text:    rgba(255,255,255,.7);
+  --header-border:  rgba(255,255,255,.18);
+  --node-active-bg: #044d41;
+  --node-active-txt:#ffffff;
+  --node-idle-bg:   #ffffff;
+  --node-idle-brd:  rgba(4,77,65,.2);
+  --node-idle-txt:  rgba(4,77,65,.35);
+}
+
+/* ── DARK — Vista (70/20/10) ─────────────────────────────── */
+[data-theme="dark"] {
+  --bg:             #1c1c1c;          /* Chumbo levemente suavizado */
+  --bg-card:        #272727;
+  --bg-sidebar:     #222222;
+  --border:         rgba(255,255,255,.08);
+  --text-heading:   #ffffff;          /* texto em branco no dark */
+  --text-body:      rgba(255,255,255,.85);
+  --text-muted:     rgba(255,255,255,.4);
+  --input-bg:       #1a1a1a;
+  --input-border:   rgba(255,255,255,.12);
+  --accent:         #84e115;          /* Verde Prestes — mantém */
+  --accent-bg:      rgba(132,225,21,.1);
+  --accent-border:  rgba(132,225,21,.3);
+  --header-bg:      #1a1a1a;
+  --header-text:    rgba(255,255,255,.5);
+  --header-border:  rgba(255,255,255,.1);
+  --node-active-bg: #84e115;          /* neon ativo no dark */
+  --node-active-txt:#1c1c1c;
+  --node-idle-bg:   #272727;
+  --node-idle-brd:  rgba(255,255,255,.12);
+  --node-idle-txt:  rgba(255,255,255,.2);
+}
+
+/* ── RESET ────────────────────────────────────────────────── */
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text-body);
+  font-family: 'Lufga', 'Outfit', system-ui, sans-serif;
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  transition: background .25s ease, color .25s ease;
+}
+
+/* ── Lufga via CDN (fallback Outfit se não carregar) ─────── */
+@font-face {
+  font-family: 'Lufga'; font-weight: 300; font-display: swap;
+  src: url('https://fonts.cdnfonts.com/s/57973/Lufga-Light.woff') format('woff');
+}
+@font-face {
+  font-family: 'Lufga'; font-weight: 400; font-display: swap;
+  src: url('https://fonts.cdnfonts.com/s/57973/Lufga-Regular.woff') format('woff');
+}
+@font-face {
+  font-family: 'Lufga'; font-weight: 500; font-display: swap;
+  src: url('https://fonts.cdnfonts.com/s/57973/Lufga-Medium.woff') format('woff');
+}
+@font-face {
+  font-family: 'Lufga'; font-weight: 700; font-display: swap;
+  src: url('https://fonts.cdnfonts.com/s/57973/Lufga-Bold.woff') format('woff');
+}
+@font-face {
+  font-family: 'Lufga'; font-weight: 800; font-display: swap;
+  src: url('https://fonts.cdnfonts.com/s/57973/Lufga-ExtraBold.woff') format('woff');
+}
+
+/* ── Scrollbar ────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Select / input base ─────────────────────────────────── */
+select {
+  -webkit-appearance: auto;
+  appearance: auto;
+  color: var(--text-body);
+  background: var(--input-bg);
+}
+
+input {
+  color: var(--text-body);
+  background: var(--input-bg);
+}
+
+select option {
+  background: var(--bg-card);
+  color: var(--text-body);
+}
