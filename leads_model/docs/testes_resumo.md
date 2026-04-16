@@ -46,34 +46,36 @@ Baseado em simulações de R$ 12.000,00:
 
 ---
 
-## 4. Diagnóstico por Segmentação de Produto (Novo)
-*Referência: Análise exploratória base v2*
+## 4. Validação Rigorosa: Segmentação por Produto (K-Fold)
+*Referência: Auditoria Estatística Abr/2026*
 
-Com a inclusão da variável **PRODUTO**, reavaliamos a inteligência do modelo para entender como cada categoria se comporta. A segmentação provou ser o caminho para **maior precisão**, pois cada produto possui uma elasticidade de mídia diferente.
+Para validar se a variável **PRODUTO** realmente agrega valor preditivo, realizamos uma bateria de testes comparando o modelo original (Baseline) com o modelo expandido. Utilizamos **Validação Cruzada (K-Fold, K=5)** para garantir que os resultados sejam consistentes em diferentes fatias da base de dados.
 
-### 4.1 Correlação e Estabilidade
-Comparamos a força da relação matemática em cada etapa do funil:
+### 4.1 Comparativo Global (Baseline vs. Expandido)
+A inclusão da variável Produto trouxe uma estabilidade significativamente maior ao modelo:
 
-| Produto | Amostras | Corr A (Invest. → Leads) | Corr B (Leads → Qualif.) | Status |
+| Métrica | Baseline (Sem Produto) | Expandido (Com Produto) | Melhoria |
+| :--- | :---: | :---: | :---: |
+| **R² (Exatidão)** | 0.4367 | **0.5348** | **+22.4%** |
+| **MAE (Erro Médio)** | 78.49 leads | **72.38 leads** | **+7.8%** |
+| **RMSE (Estabilidade)** | 105.97 leads | **95.99 leads** | **+9.4%** |
+
+**Conclusão Global:** O aumento de **22.4% no R²** prova que o tipo de produto é um dos principais drivers de comportamento de leads, permitindo ao modelo explicar mais da metade da variância total dos dados.
+
+### 4.2 Métricas Detalhadas por Categoria (MAE e RMSE)
+Auditamos o erro médio absoluto (MAE) em cada segmento de produto para identificar ganhos locais de precisão:
+
+| Categoria | Amostras | MAE (Leads) | RMSE (Leads) | Status de Previsibilidade |
 | :--- | :---: | :---: | :---: | :--- |
-| **Produto 6** | 8 | **0.8523** | 0.5931 | 📈 **Altíssima Previsibilidade** |
-| **Produto 4** | 44 | **0.7342** | **0.8469** | ✅ **Muito Estável** |
-| **Produto 1** | 128 | **0.6227** | **0.7527** | ✅ **Consistente** |
-| **Produto 3** | 96 | 0.4758 | 0.5044 | ⚠️ **Variância Moderada** |
-| **Produto 5** | 12 | 0.1039 | **0.9249** | 🎯 **Conversão Padrão** |
-| **Produto 2** | 11 | -0.0319 | 0.5909 | ⛔ **Fatores Externos Dominantes** |
+| **Produto 3** | 98 | 67.23 | 85.12 | ✅ Alta (Ganho de 29%) |
+| **Produto 4** | 44 | 59.82 | 72.45 | ✅ Alta (Ganho de 20%) |
+| **Produto 1** | 128 | 66.52 | 88.30 | ✅ Estável |
+| **Produto 6** | 8 | 133.42 | 145.10 | ⚠️ Base Pequena |
+| **Produto 5** | 12 | 205.81 | 212.40 | ⚠️ Alta Volatilidade |
+| **Produto 2** | 12 | 48.40 | 55.20 | ⛔ Fatores Externos |
 
-### 4.2 Eficiência Operacional por Produto
-Comparativo de custos e conversão real capturada na base:
+### 4.3 Recomendação Final
+Os testes de **Validação Cruzada** confirmam que a segmentação por produto não causa *overfitting* e melhora consistentemente a capacidade do Simulador de prever volumes de leads.
 
-| Produto | CPL Médio | Taxa Qualificação | Métrica vs. Global |
-| :--- | :--- | :--- | :--- |
-| **Produto 5** | R$ 31,23 | **46,4%** | 🏆 Melhor Qualificação |
-| **Produto 6** | **R$ 12,91** | 39,9% | 💸 Melhor Custo-Benefício |
-| **Produto 4** | R$ 36,44 | 43,1% | ⚖️ Equilíbrio Eficiência |
-| **Produto 1** | R$ 51,95 | 34,8% | 🔻 Custo de Aquisição Elevado |
-
-### 4.3 Conclusão da Segmentação
-Os dados mostram que o **Produto 6** e o **Produto 4** são as "âncoras" de previsibilidade do modelo. Investimentos neles tendem a seguir a régua matemática com erro mínimo. Já o **Produto 2** exige cautela: o investimento isolado não explica a geração de leads, indicando que a demanda é movida por outros fatores (localização, preço ou falta de estoque).
-
-**Recomendação:** A inclusão desta variável no modelo definitivo reduzirá o erro global (MAE) em cerca de 15-20%.
+> [!TIP]
+> **Decisão Proposta:** Implementar o suporte a `PRODUTO` nos modelos A e B. A melhoria no RMSE (9.4%) indica que o modelo novo é menos suscetível a "erros grosseiros" do que a versão atual.
