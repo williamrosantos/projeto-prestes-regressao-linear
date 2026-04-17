@@ -111,9 +111,12 @@ export default function App() {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
-  // Carrega metadados da API
+  // Carrega metadados da API (timeout de 90s para cold start do Render)
   useEffect(() => {
-    fetch(`${API_URL}/api/metadata`)
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 90_000);
+
+    fetch(`${API_URL}/api/metadata`, { signal: controller.signal })
       .then((r) => { if (!r.ok) throw new Error("API error"); return r.json(); })
       .then((d) => {
         setPracas(d.pracas || []);
@@ -123,7 +126,8 @@ export default function App() {
           setForm((p) => ({ ...p, praca: d.pracas[0], produto: d.produtos[0] }));
         }
       })
-      .catch(() => setApiStatus("error"));
+      .catch(() => setApiStatus("error"))
+      .finally(() => clearTimeout(timer));
   }, []);
 
   const handleSimulate = async () => {
@@ -257,6 +261,20 @@ export default function App() {
           </div>
 
           {/* Banner de status da API */}
+          {apiStatus === "loading" && (
+            <div style={{
+              padding: "0.65rem 0.85rem",
+              background: dark ? "rgba(132,225,21,.06)" : "#f0fdf4",
+              borderLeft: "3px solid #84e115",
+              borderRadius: "0 5px 5px 0",
+              fontSize: "0.7rem",
+              fontWeight: 300,
+              lineHeight: 1.45,
+              color: dark ? "#d9f99d" : "#166534",
+            }}>
+              Conectando ao servidor... pode levar alguns segundos.
+            </div>
+          )}
           {apiStatus === "error" && (
             <div style={{
               padding: "0.65rem 0.85rem",
@@ -268,7 +286,7 @@ export default function App() {
               lineHeight: 1.45,
               color: dark ? "#fca5a5" : "#b91c1c",
             }}>
-              Backend offline — inicie o servidor Python em <code style={{ fontWeight: 700 }}>localhost:8000</code>
+              Servidor indisponível — tente recarregar a página.
             </div>
           )}
 
@@ -281,8 +299,7 @@ export default function App() {
               style={inputStyle}
               disabled={apiStatus !== "ok"}
             >
-              {apiStatus === "loading" && <option value="">carregando...</option>}
-              {apiStatus === "error"   && <option value="">API offline</option>}
+              {apiStatus !== "ok" && <option value="">—</option>}
               {pracas.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
@@ -296,8 +313,7 @@ export default function App() {
               style={inputStyle}
               disabled={apiStatus !== "ok"}
             >
-              {apiStatus === "loading" && <option value="">carregando...</option>}
-              {apiStatus === "error"   && <option value="">API offline</option>}
+              {apiStatus !== "ok" && <option value="">—</option>}
               {produtos.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
