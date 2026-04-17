@@ -14,13 +14,14 @@ import modelo_b
 
 app = FastAPI(title="Prestes Lifecycle Simulator API")
 
-# Configuração de CORS
+# Configuração de CORS — totalmente permissivo para cross-origin
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -52,7 +53,11 @@ class LifecycleRequest(BaseModel):
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "resources_loaded": data_cache["df"] is not None}
+    return {
+        "status": "ok",
+        "version": "2025-04-16-v2",
+        "resources_loaded": data_cache["df"] is not None
+    }
 
 @app.get("/api/metadata")
 async def get_metadata():
