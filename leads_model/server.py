@@ -14,12 +14,12 @@ import modelo_b
 
 app = FastAPI(title="Prestes Lifecycle Simulator API")
 
-# Configuração de CORS 
+# Configuração de CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
