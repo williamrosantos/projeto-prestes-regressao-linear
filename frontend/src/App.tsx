@@ -119,12 +119,16 @@ export default function App() {
     fetch(`${API_URL}/api/metadata`, { signal: controller.signal })
       .then((r) => { if (!r.ok) throw new Error("API error"); return r.json(); })
       .then((d) => {
-        setPracas(d.pracas || []);
-        setProdutos(d.produtos || []);
+        const pracasList   = d.pracas?.length   ? d.pracas   : [];
+        const produtosList = d.produtos?.length  ? d.produtos : ["Produto 1"];
+        setPracas(pracasList);
+        setProdutos(produtosList);
         setApiStatus("ok");
-        if (d.pracas?.length && d.produtos?.length) {
-          setForm((p) => ({ ...p, praca: d.pracas[0], produto: d.produtos[0] }));
-        }
+        setForm((p) => ({
+          ...p,
+          praca:   pracasList[0]   ?? p.praca,
+          produto: produtosList[0] ?? p.produto,
+        }));
       })
       .catch(() => setApiStatus("error"))
       .finally(() => clearTimeout(timer));
