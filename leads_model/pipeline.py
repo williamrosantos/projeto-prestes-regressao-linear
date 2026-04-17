@@ -5,6 +5,27 @@ pipeline.py — Leitura, limpeza e engenharia de variáveis
 import pandas as pd
 import numpy as np
 
+# Mapeamento empreendimento → produto (tipologia)
+EMPREENDIMENTO_PRODUTO = {
+    "Empreendimento 1":  "Produto 1",
+    "Empreendimento 2":  "Produto 1",
+    "Empreendimento 3":  "Produto 1",
+    "Empreendimento 4":  "Produto 2",
+    "Empreendimento 5":  "Produto 3",
+    "Empreendimento 6":  "Produto 3",
+    "Empreendimento 7":  "Produto 1",
+    "Empreendimento 8":  "Produto 3",
+    "Empreendimento 9":  "Produto 4",
+    "Empreendimento 10": "Produto 3",
+    "Empreendimento 11": "Produto 6",
+    "Empreendimento 12": "Produto 4",
+    "Empreendimento 13": "Produto 1",
+    "Empreendimento 14": "Produto 5",
+    "Empreendimento 15": "Produto 1",
+    "Empreendimento 16": "Produto 1",
+    "Empreendimento 17": "Produto 4",
+}
+
 
 def load_and_prepare(filepath: str) -> pd.DataFrame:
     df = pd.read_excel(filepath, sheet_name="base dados")
@@ -59,9 +80,9 @@ def load_and_prepare(filepath: str) -> pd.DataFrame:
     # Segurança para mes do ciclo
     df["mes_ciclo"] = df.groupby("empreendimento").cumcount() + 1
     
-    # Se a base não tiver a coluna produto por alguma falha manual, protege o fluxo fornecendo default
+    # Derivar produto a partir do empreendimento (mapeamento fixo)
     if "produto" not in df.columns:
-        df["produto"] = "Produto 1"
+        df["produto"] = df["empreendimento"].map(EMPREENDIMENTO_PRODUTO).fillna("Produto 1")
         
     df["praca_produto"] = df["praca"].astype(str) + "_" + df["produto"].astype(str)
 
