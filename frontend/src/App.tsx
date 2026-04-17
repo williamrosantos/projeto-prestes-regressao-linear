@@ -103,6 +103,7 @@ export default function App() {
   });
   const [timeline, setTimeline] = useState<TimelineNode[]>([]);
   const [loading, setLoading]   = useState(false);
+  const [simError, setSimError] = useState<string | null>(null);
 
   const dark = theme === "dark";
 
@@ -136,6 +137,7 @@ export default function App() {
 
   const handleSimulate = async () => {
     setLoading(true);
+    setSimError(null);
     try {
       const resp = await fetch(`${API_URL}/api/simulate-lifecycle`, {
         method: "POST",
@@ -148,9 +150,14 @@ export default function App() {
           meses_projecao:        form.mesesProjecao,
         }),
       });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.detail || `Erro ${resp.status}`);
+      }
       const d = await resp.json();
       setTimeline(d.timeline || []);
     } catch (e) {
+      setSimError(e instanceof Error ? e.message : "Erro ao simular");
       console.error(e);
     } finally {
       setLoading(false);
@@ -382,6 +389,22 @@ export default function App() {
           )}
 
           <div style={{ flex: 1 }} />
+
+          {/* Erro de simulação */}
+          {simError && (
+            <div style={{
+              padding: "0.65rem 0.85rem",
+              background: dark ? "rgba(239,68,68,.08)" : "#fff5f5",
+              borderLeft: "3px solid #ef4444",
+              borderRadius: "0 5px 5px 0",
+              fontSize: "0.68rem",
+              fontWeight: 300,
+              lineHeight: 1.45,
+              color: dark ? "#fca5a5" : "#b91c1c",
+            }}>
+              {simError}
+            </div>
+          )}
 
           {/* Botão CTA — Verde Escuro → hover Verde Prestes */}
           <CTAButton onClick={handleSimulate} loading={loading} disabled={apiStatus !== "ok" || !form.praca} />

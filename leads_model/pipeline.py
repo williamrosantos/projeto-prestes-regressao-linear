@@ -52,6 +52,18 @@ def load_and_prepare(filepath: str) -> pd.DataFrame:
 
     # Mês calendário (1–12) para capturar sazonalidade
     df["mes_calendario"] = df["mes"].dt.month
+    
+    # NOVAS FEATURES ESTÍSTICAS (Log-Log e Interações)
+    df["log_investimento"] = np.log1p(df["investimento"])
+    df["log_leads"] = np.log1p(df["leads"])
+    # Segurança para mes do ciclo
+    df["mes_ciclo"] = df.groupby("empreendimento").cumcount() + 1
+    
+    # Se a base não tiver a coluna produto por alguma falha manual, protege o fluxo fornecendo default
+    if "produto" not in df.columns:
+        df["produto"] = "Produto 1"
+        
+    df["praca_produto"] = df["praca"].astype(str) + "_" + df["produto"].astype(str)
 
     return df
 
@@ -62,7 +74,7 @@ def get_summary(df: pd.DataFrame) -> dict:
         "total_registros": len(df),
         "empreendimentos": df["empreendimento"].nunique(),
         "pracas": df["praca"].nunique(),
-        "periodo": f"{df['mes'].min().strftime('%b/%Y')} → {df['mes'].max().strftime('%b/%Y')}",
+        "periodo": f"{df['mes'].min().strftime('%b/%Y')} ate {df['mes'].max().strftime('%b/%Y')}",
         "cpl_medio": round(df["cpl"].mean(), 2),
         "taxa_qualificacao_media": round(df["taxa_qualificacao"].mean(), 4),
         "investimento_total": round(df["investimento"].sum(), 2),

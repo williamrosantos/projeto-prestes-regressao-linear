@@ -50,7 +50,7 @@ def main(data_path: str):
     print(f"  Taxa qualif. med : {summary['taxa_qualificacao_media']:.1%}")
 
     # ── Modelo A ──────────────────────────────────────────────
-    print_section("TREINANDO MODELO A  (Investimento → Leads)")
+    print_section("TREINANDO MODELO A  (Investimento -> Leads)")
     result_a = modelo_a.train(df)
     print_metrics("Modelo A", result_a)
 
@@ -59,7 +59,7 @@ def main(data_path: str):
     print(f"\n  Modelo salvo em: {MODEL_A_PATH}")
 
     # ── Modelo B ──────────────────────────────────────────────
-    print_section("TREINANDO MODELO B  (Leads → Leads Qualificados)")
+    print_section("TREINANDO MODELO B  (Leads -> Leads Qualificados)")
     result_b = modelo_b.train(df)
     print_metrics("Modelo B", result_b)
 
@@ -67,39 +67,45 @@ def main(data_path: str):
     print(f"\n  Modelo salvo em: {MODEL_B_PATH}")
 
     # ── Exemplo de uso ────────────────────────────────────────
-    print_section("EXEMPLOS DE PREDIÇÃO")
+    print_section("EXEMPLOS DE PREDIÇÃO (VALIDAÇÃO DE CÓDIGO)")
 
     praca_exemplo = df["praca"].value_counts().idxmax()
+    if "produto" in df.columns:
+        produto_exemplo = df["produto"].value_counts().idxmax()
+    else:
+        produto_exemplo = "Produto 1"
+        
     mes_ciclo_ex = 6
     mes_cal_ex = 3
 
     # A1 — dado investimento, estimar leads
     inv_exemplo = 10_000
     leads_res = modelo_a.predict_leads(
-        result_a, inv_exemplo, praca_exemplo, mes_ciclo_ex, mes_cal_ex
+        result_a, inv_exemplo, praca_exemplo, produto_exemplo, mes_ciclo_ex, mes_cal_ex
     )
     leads_pred = leads_res["estimativa"]
-    print(f"\n  [A1] Investimento R$ {inv_exemplo:,.0f} → {leads_pred:.0f} leads estimados [Piso: {leads_res['piso']:.0f} | Teto: {leads_res['teto']:.0f}]")
-    print(f"       (praça: {praca_exemplo}, mês ciclo: {mes_ciclo_ex}, mês: {mes_cal_ex})")
+    print(f"\n  [A1] Investimento R$ {inv_exemplo:,.0f} - {leads_pred:.0f} leads estimados [Piso: {leads_res['piso']:.0f} | Teto: {leads_res['teto']:.0f}]")
+    print(f"       (praça/prod: {praca_exemplo}/{produto_exemplo}, mês: {mes_ciclo_ex}, mês_cal: {mes_cal_ex})")
 
     # A2 — dada meta de leads, estimar investimento
     meta_leads = 200
     inv_necessario = modelo_a.predict_investimento(
-        result_a, meta_leads, praca_exemplo, mes_ciclo_ex, mes_cal_ex
+        result_a, meta_leads, praca_exemplo, produto_exemplo, mes_ciclo_ex, mes_cal_ex
     )
-    print(f"\n  [A2] Meta de {meta_leads} leads → R$ {inv_necessario:,.2f} estimados")
+    print(f"\n  [A2] Meta de {meta_leads} leads -> R$ {inv_necessario:,.2f} em mídia necessários")
 
     # B — leads qualificados
     pred_b = modelo_b.predict_qualificados(
         model_dict=result_b,
         leads=leads_pred,
         praca=praca_exemplo,
+        produto=produto_exemplo,
         mes_ciclo=mes_ciclo_ex,
         mes_calendario=mes_cal_ex,
         df_historico=df,
     )
-    print(f"\n  [B]  {leads_pred:.0f} leads → {pred_b['pred_modelo']:.0f} qualificados (modelo) [Piso: {pred_b['piso_modelo']:.0f} | Teto: {pred_b['teto_modelo']:.0f}]")
-    print(f"       {leads_pred:.0f} leads → {pred_b['pred_taxa']:.0f} qualificados (taxa histórica {pred_b['taxa_usada']:.1%})")
+    print(f"\n  [B]  {leads_pred:.0f} leads -> {pred_b['pred_modelo']:.0f} qualificados (modelo) [Piso: {pred_b['piso_modelo']:.0f} | Teto: {pred_b['teto_modelo']:.0f}]")
+    print(f"       {leads_pred:.0f} leads -> {pred_b['pred_taxa']:.0f} qualificados (taxa histórica {pred_b['taxa_usada']:.1%})")
 
     # ── Taxas históricas por praça ─────────────────────────────
     print_section("TAXAS HISTÓRICAS POR PRAÇA")

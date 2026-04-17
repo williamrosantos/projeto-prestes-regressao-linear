@@ -4,9 +4,7 @@ modelo_b.py — Modelo B: Leads → Leads Qualificados
 Responde: Se investir X e gerar Y leads com taxa de qualificação Z,
           quantos leads qualificados vou ter?
 
-A taxa de qualificação pode ser:
-  - Informada manualmente (premissa do usuário)
-  - Estimada pelo modelo com base no histórico da praça/empreendimento
+Abordagem estendida: Adição da variável de Produto.
 """
 
 import numpy as np
@@ -20,13 +18,13 @@ from sklearn.metrics import r2_score, mean_absolute_error
 from sklearn.model_selection import cross_val_score
 
 
-FEATURES = ["leads", "praca", "mes_ciclo", "mes_calendario"]
+FEATURES = ["leads", "praca", "produto", "mes_ciclo", "mes_calendario"]
 TARGET = "leads_qualificados"
 
 
 def build_preprocessor():
     numeric = ["leads", "mes_ciclo", "mes_calendario"]
-    categorical = ["praca"]
+    categorical = ["praca", "produto"]
 
     preprocessor = ColumnTransformer([
         ("num", "passthrough", numeric),
@@ -76,27 +74,23 @@ def predict_qualificados(
     model_dict: dict,
     leads: float,
     praca: str,
+    produto: str,
     mes_ciclo: int,
     mes_calendario: int,
     taxa_manual: float = None,
     df_historico: pd.DataFrame = None,
 ) -> dict:
     """
-    Prediz leads qualificados.
-
-    Se taxa_manual fornecida: aplica diretamente sobre os leads.
-    Senão: usa o modelo de regressão treinado.
-
-    Retorna dict com ambas as estimativas para comparação.
+    Prediz leads qualificados combinando regressão e taxas.
     """
-    # Estimativa pelo modelo de regressão
     X = pd.DataFrame([{
         "leads": leads,
         "praca": praca,
+        "produto": produto,
         "mes_ciclo": mes_ciclo,
         "mes_calendario": mes_calendario,
     }])
-    # Robustez: aceita tanto o dicionário novo quanto o modelo antigo
+
     if isinstance(model_dict, dict):
         model = model_dict["model"]
         mape = model_dict.get("mape", 0.2)
@@ -108,7 +102,6 @@ def predict_qualificados(
     piso_modelo = max(0, round(pred_modelo * (1 - mape), 1))
     teto_modelo = round(pred_modelo * (1 + mape), 1)
 
-    # Estimativa pela taxa (manual ou histórica)
     if taxa_manual is not None:
         taxa = taxa_manual
         origem_taxa = "manual"

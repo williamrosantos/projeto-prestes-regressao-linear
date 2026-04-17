@@ -1,34 +1,35 @@
 """
-modelo_a.py — Modelo A: Investimento ↔ Leads
+modelo_a.py — Modelo A (Otimizado): Investimento ↔ Leads
 
 Responde duas perguntas:
   1. Para gerar X leads, quanto preciso investir?
   2. Se investir X, quantos leads vou gerar?
 
-Abordagem: Regressão Linear com efeitos fixos de praça e mês do ciclo.
+Abordagem: Regressão Linear Múltipla OLS com Transformação Logarítmica 
+e Interações de Matriz (Praça x Produto).
 """
 
 import numpy as np
 import pandas as pd
 import joblib
 from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.metrics import r2_score, mean_absolute_error
 from sklearn.model_selection import cross_val_score
 
 
-FEATURES = ["investimento", "praca", "mes_ciclo", "mes_calendario"]
-TARGET_LEADS = "leads"
+FEATURES = ["log_investimento", "mes_ciclo", "mes_calendario", "praca", "produto", "praca_produto"]
+TARGET_LEADS = "log_leads"
 
 
 def build_preprocessor():
-    numeric = ["investimento", "mes_ciclo", "mes_calendario"]
-    categorical = ["praca"]
+    numeric = ["log_investimento", "mes_ciclo", "mes_calendario"]
+    categorical = ["praca", "produto", "praca_produto"]
 
     preprocessor = ColumnTransformer([
-        ("num", "passthrough", numeric),
+        ("num", StandardScaler(), numeric),
         ("cat", OneHotEncoder(drop="first", sparse_output=False, handle_unknown="ignore"), categorical),
     ])
     return preprocessor
@@ -46,12 +47,17 @@ def train(df: pd.DataFrame) -> dict:
 
     model.fit(X, y)
 
-    # Métricas com cross-validation (5 folds)
+    # Métricas com cross-validation (5 folds) na escala LOG
     cv_r2 = cross_val_score(model, X, y, cv=5, scoring="r2")
-    y_pred = model.predict(X)
-    mae = mean_absolute_error(y, y_pred)
-    r2 = r2_score(y, y_pred)
-    mape = np.mean(np.abs((y - y_pred) / np.maximum(y, 1)))
+    
+    # Para validar MAE real, reverte ao mundo físico (exponencial)
+    pred_log = model.predict(X)
+    y_pred_real = np.expm1(pred_log)
+    y_real = np.expm1(y)
+    
+    mae = mean_absolute_error(y_real, y_pred_real)
+    r2 = r2_score(y_real, y_pred_real)
+    mape = np.mean(np.abs((y_real - y_pred_real) / np.maximum(y_real, 1)))
 
     return {
         "model": model,
@@ -64,17 +70,24 @@ def train(df: pd.DataFrame) -> dict:
     }
 
 
-def predict_leads(model_input, investimento: float, praca: str,
+def predict_leads(model_input, investimento: float, praca: str, produto: str,
                   mes_ciclo: int, mes_calendario: int) -> dict:
-    """Dado investimento → retorna dict com leads estimados, piso e teto."""
+    """Dado investimento, praça e produto → retorna dict com leads estimados."""
+    
+    # Prepara Input com as mesmas features exatas do Treino
+    log_inv = np.log1p(max(investimento, 0))
+    praca_produto = f"{praca}_{produto}"
+    
     X = pd.DataFrame([{
-        "investimento": investimento,
-        "praca": praca,
+        "log_investimento": log_inv,
         "mes_ciclo": mes_ciclo,
         "mes_calendario": mes_calendario,
+        "praca": praca,
+        "produto": produto,
+        "praca_produto": praca_produto
     }])
     
-    # Robustez: aceita tanto o dicionário novo quanto o modelo antigo
+    # Robustez (Compatibilidade Opcional do Dict do modelo gerado)
     if isinstance(model_input, dict):
         model = model_input["model"]
         mape = model_input.get("mape", 0.2)
@@ -82,7 +95,9 @@ def predict_leads(model_input, investimento: float, praca: str,
         model = model_input
         mape = 0.2  # Default se não houver MAPE salvo
     
-    leads = model.predict(X)[0]
+    # Como o modelo retorna log_leads, usamos expm1
+    pred_log = model.predict(X)[0]
+    leads = np.expm1(pred_log)
     pred = max(0, round(leads, 1))
     
     return {
@@ -92,18 +107,17 @@ def predict_leads(model_input, investimento: float, praca: str,
     }
 
 
-def predict_investimento(model_dict: dict, leads_meta: float, praca: str,
+def predict_investimento(model_dict: dict, leads_meta: float, praca: str, produto: str,
                          mes_ciclo: int, mes_calendario: int,
                          tol: float = 1.0, max_iter: int = 1000) -> float:
     """
     Dado meta de leads → estima investimento necessário via busca binária.
-    Inverte o modelo sem precisar de regressão reversa separada.
     """
-    low, high = 0.0, 500_000.0
+    low, high = 0.0, 1_000_000.0  # Teto um pouco mais alto devido ao Log
 
     for _ in range(max_iter):
         mid = (low + high) / 2
-        res = predict_leads(model_dict, mid, praca, mes_ciclo, mes_calendario)
+        res = predict_leads(model_dict, mid, praca, produto, mes_ciclo, mes_calendario)
         pred = res["estimativa"]
 
         if abs(pred - leads_meta) <= tol:
